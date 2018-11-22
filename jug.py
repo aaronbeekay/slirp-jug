@@ -193,7 +193,7 @@ print('hello')
 # Get products
 products = shopify.Product.find()
 for product in products:
-	time.sleep(0.6)
+	time.sleep(1)
 	logger.debug('Looking at product {} ({})'.format(product.id, product.handle))
 	variants = product.variants
 	logger.debug('I see {} variants for {}.'.format(len(variants), product.handle))
