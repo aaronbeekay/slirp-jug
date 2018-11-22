@@ -2,6 +2,7 @@ import shopify
 import logging
 import os
 import psycopg2
+import time
 
 logger = logging.getLogger('jug.slirp.aaronbeekay')
 logger.setLevel(logging.DEBUG)
@@ -187,26 +188,48 @@ conn = psycopg2.connect(DATABASE_URL)
 cur = conn.cursor()
 cur.execute(tablequery)
 conn.commit()
+print('hello')
 
 # Get products
 products = shopify.Product.find()
 for product in products:
+	time.sleep(0.6)
 	logger.debug('Looking at product {} ({})'.format(product.id, product.handle))
 	variants = product.variants
 	logger.debug('I see {} variants for {}.'.format(len(variants), product.handle))
 	
 	# Extract metafields
-	pmfg = pmpn = px = py = pz = pshippingnotes = None
+	pmfg = pmpn = px = py = pz = pshippingnotes = preserveprice = paskprice = psunkcost = pownership = None
 	for mf in product.metafields():
 		if mf.key == 'Manufacturer':
-			pmfg = mf.key
+			pmfg = mf.value
 		elif mf.key == 'MPN':
-			pmpn = mf.key
+			pmpn = mf.value
+		elif mf.key == 'Sunk-cost':
+			psunkcost = mf.value
+		elif mf.key == 'Reserve-price':
+			preserveprice = mf.value
+		elif mf.key == 'Asking-price':
+			paskprice == mf.value
+		elif mf.key == 'shipping-notes':
+			pshippingnotes = mf.value
+		elif mf.key == 'product_dim_x':
+			px = mf.value
+		elif mf.key == 'product_dim_y':
+			py = mf.value
+		elif mf.key == 'product_dim_z':
+			pz = mf.value
+		elif mf.key == 'Ownership':
+			pownership = mf.value
 	
 	for variant in variants:
 		# Extract data from metafields
-		vcond = vcondnotes = vsunkcost = vreserveprice = vaskprice = vownership = None
-		vx = vy = vz = shippingnotes = None
+		vcond = vcondnotes = vsunkcost = vreserveprice = vaskprice = None
+		vcond = variant.option1
+		
+		for mf in variant.metafields():
+			if mf.key == 'condition-notes':
+				vcondnotes = mf.value
 
 		params = {					'variant_id' 				: variant.id,
 									'product_id' 				: product.id,
@@ -231,7 +254,7 @@ for product in products:
 									'variant_sunk_cost' 		: vsunkcost,
 									'variant_reserve_price' 	: vreserveprice,
 									'variant_ask_price' 		: vaskprice,
-									'variant_ownership' 		: vownership,
+									'variant_ownership' 		: pownership,
 									'variant_price' 			: variant.price,
 									'variant_title' 			: variant.title,
 									'variant_update_date' 		: variant.updated_at,
